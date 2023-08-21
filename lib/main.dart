@@ -21,16 +21,16 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-  Map<String,dynamic> scoremap={};
-  
+  Map<String, dynamic> scoremap = {};
+
   Future<void> getDataFromFirebase() async {
     CollectionReference livescore = firestore.collection('football');
     final DocumentReference docReference = livescore.doc('!_ban_vs_ind');
-     final data = await docReference.get();
-     print(data.data());
-    scoremap=jsonDecode(data.data().toString());
-
+    final data = await docReference.get();
+    print(data.data());
+    scoremap = jsonDecode(data.data().toString());
   }
+
   @override
   void initState() {
     getDataFromFirebase();
@@ -38,6 +38,7 @@ class _MyAppState extends State<MyApp> {
     // TODO: implement initState
     super.initState();
   }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -45,54 +46,73 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: const Text('Live Score'),
         ),
-        body:  FutureBuilder(
-          future: firestore.collection('football').doc('!_ban_vs_ind').get(),
-          builder: (context,AsyncSnapshot <DocumentSnapshot<Object?>> data ) {
-            print(data.data?.data());
-            if(data.connectionState == ConnectionState.waiting){
-              return Center(child: CircularProgressIndicator(),);
-            }else if(data.connectionState == ConnectionState.done){
-              if(data.hasError){
-                return Center(child: Text('Something wrong please try again',style: TextStyle(fontSize: 25),),);
-              }
-            }
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
+        body: StreamBuilder(
+            stream: firestore
+                .collection('football')
+                .doc('!_ban_vs_ind')
+                .snapshots(),
+            builder:
+                (context, AsyncSnapshot<DocumentSnapshot<Object?>> snapshot) {
+              print(snapshot.data?.data());
+              final score = snapshot.data!;
 
-              children: [
-                SizedBox(height: 100,),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Column(
-                      children: [
-                        Text('520',style: TextStyle(fontSize: 30),),
-                        Text('Bangladesh',style: TextStyle(fontSize: 25),)
-                      ],
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    height: 100,
+                  ),
+                  Center(
+                    child: Text(
+                      score.get('match_name'),
+                      style: TextStyle(fontSize: 30),
                     ),
-                    Column(
-                      children: [
-                        Text('VS',style: TextStyle(fontSize: 25),),
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        Text('520',style: TextStyle(fontSize: 30),),
-                        Text('Bangladesh',style: TextStyle(fontSize: 25),)
-                      ],
-                    )
-                  ],
-                ),
-              ],
-            );
-          }
-        ),
+                  ),
+                  SizedBox(
+                    height: 50,
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Column(
+                        children: [
+                          Text(
+                            score.get('score_a').toString(),
+                            style: TextStyle(fontSize: 30),
+                          ),
+                          Text(
+                            score.get('team_a'),
+                            style: TextStyle(fontSize: 25),
+                          )
+                        ],
+                      ),
+                      const Column(
+                        children: [
+                          Text(
+                            'VS',
+                            style: TextStyle(fontSize: 25),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          Text(
+                            score.get('score_b').toString(),
+                            style: TextStyle(fontSize: 30),
+                          ),
+                          Text(
+                            score.get('team_b'),
+                            style: TextStyle(fontSize: 25),
+                          )
+                        ],
+                      )
+                    ],
+                  ),
+                ],
+              );
+            }),
       ),
     );
   }
 }
-
-
-
-
